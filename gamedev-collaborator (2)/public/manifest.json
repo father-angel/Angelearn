@@ -1,0 +1,23 @@
+{
+  "name": "انجلرن | AngelLearn",
+  "short_name": "AngelLearn",
+  "description": "بازی رشد فردی و یادگیری؛ باغ شخصی، تمرین‌های روزانه، شهر مهارت‌ها و نقشه زنده ۲.۵ بعدی",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f5132",
+  "theme_color": "#0f5132",
+  "icons": [
+    {
+      "src": "/assets/aistudio/Neon-Lime_Winged_Book_Emblem_9f21e0f4.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/assets/aistudio/Neon-Lime_Winged_Book_Emblem_9f21e0f4.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

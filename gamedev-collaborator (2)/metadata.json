@@ -1,0 +1,6 @@
+{
+  "name": "انجلرن | AngelLearn",
+  "description": "بازی رشد فردی و یادگیری؛ باغ شخصی، تمرین‌های روزانه، شهر مهارت‌ها و نقشه زنده ۲.۵ بعدی",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

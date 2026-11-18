@@ -1,0 +1,377 @@
+@import "tailwindcss";
+
+:root {
+  /* Hand-Painted Isometric 2.5D Standardized Botanical-Slate Palette (60-30-10 & WCAG AA) */
+  --hp-meadow-sunlit: #2d7a53;
+  --hp-meadow-mid: #236443;
+  --hp-meadow-deep: #1a4d34;
+  --hp-meadow-shadow: #123826;
+  --hp-river-surface: #0ea5e9;
+  --hp-river-deep: #0369a1;
+  --hp-stone-top: #cbd5e1;
+  --hp-stone-left-lit: #94a3b8;
+  --hp-stone-right-shaded: #475569;
+  --hp-timber-top: #b45309;
+  --hp-timber-shaded: #78350f;
+  --hp-gold-filigree: #fbbf24;
+  --hp-emerald-rim: rgba(110, 231, 183, 0.35);
+
+  /* Standardized 30% Structural UI & Text Contrast Tokens */
+  --ui-surface-panel: linear-gradient(180deg, #0f241d 0%, #0a1a15 52%, #06110d 100%);
+  --ui-surface-hud: linear-gradient(180deg, rgba(15, 41, 32, 0.96) 0%, rgba(10, 29, 23, 0.97) 52%, rgba(6, 19, 15, 0.98) 100%);
+  --ui-surface-card: #143026;
+  --ui-border-subtle: rgba(110, 231, 183, 0.25);
+  --ui-border-gold: rgba(245, 158, 11, 0.85);
+  --ui-text-primary: #f8fafc;
+  --ui-text-secondary: #e2e8f0;
+  --ui-text-muted: #cbd5e1;
+
+  --hp-hud-surface: linear-gradient(180deg, rgba(15, 41, 32, 0.96) 0%, rgba(6, 19, 15, 0.98) 100%);
+  --hp-painted-bevel: inset 0 2px 6px rgba(255, 255, 255, 0.14), inset 0 -4px 10px rgba(0, 0, 0, 0.32);
+  --hp-drop-shadow-25d: 0 14px 28px -6px rgba(4, 24, 16, 0.55), 0 4px 10px -2px rgba(0, 0, 0, 0.32);
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: 2px solid #fde047;
+  outline-offset: 2px;
+}
+
+@layer utilities {
+  .perspective-isometric {
+    transform: rotateX(55deg) rotateZ(-45deg);
+    transform-style: preserve-3d;
+  }
+  .preserve-3d {
+    transform-style: preserve-3d;
+  }
+}
+
+/* ============================================================================
+   SUBTLE, BATTERY-EFFICIENT HAND-PAINTED 2.5D ENVIRONMENTAL ANIMATIONS
+   ============================================================================ */
+
+@keyframes sway {
+  0%, 100% { transform: rotate(0deg) skewX(0deg); }
+  50% { transform: rotate(1.8deg) skewX(1deg); }
+}
+
+@keyframes float-gentle {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-5px); }
+}
+
+@keyframes pulse-soft {
+  0%, 100% { transform: scale(1); opacity: 0.92; }
+  50% { transform: scale(1.04); opacity: 1; }
+}
+
+/* Gentle 2.5D Canopy Breeze (Applied to tree foliage clusters) */
+@keyframes hpCanopyBreeze {
+  0%, 100% {
+    transform: rotate(-0.9deg) translateY(0px);
+  }
+  50% {
+    transform: rotate(1.1deg) translateY(-1.5px);
+  }
+}
+
+/* GPU-Composited Avatar Walk & Idle Animations (replaces SVG SMIL animateTransform) */
+@keyframes hpAvatarWalkBob {
+  0%, 100% { transform: translate3d(0, 0px, 0); }
+  25% { transform: translate3d(0, -3.5px, 0); }
+  50% { transform: translate3d(0, 0px, 0); }
+  75% { transform: translate3d(0, -3px, 0); }
+}
+
+@keyframes hpAvatarIdleBob {
+  0%, 100% { transform: translate3d(0, 0px, 0); }
+  50% { transform: translate3d(0, -1.6px, 0); }
+}
+
+@keyframes hpLegStrideLeft {
+  0%, 100% { transform: translate3d(0, 0px, 0); }
+  25% { transform: translate3d(0, -5px, 0); }
+  50% { transform: translate3d(0, 0px, 0); }
+  75% { transform: translate3d(0, 1px, 0); }
+}
+
+@keyframes hpLegStrideRight {
+  0%, 100% { transform: translate3d(0, 0px, 0); }
+  25% { transform: translate3d(0, 1px, 0); }
+  50% { transform: translate3d(0, 0px, 0); }
+  75% { transform: translate3d(0, -5px, 0); }
+}
+
+/* Soft River & Streamlet Water Shimmer (GPU-Composited Transform + Opacity — Zero SVG Repaint) */
+@keyframes hpWaterFlow {
+  0%, 100% {
+    transform: translate3d(-4px, -6px, 0);
+    opacity: 0.45;
+  }
+  50% {
+    transform: translate3d(4px, 8px, 0);
+    opacity: 0.85;
+  }
+}
+
+@keyframes hpStreamletFlow {
+  0%, 100% {
+    transform: translate3d(4px, -2px, 0);
+    opacity: 0.45;
+  }
+  50% {
+    transform: translate3d(-5px, 3px, 0);
+    opacity: 0.85;
+  }
+}
+
+/* Gentle Koi Pond Ripple & Waterfall Foam Pulse */
+@keyframes hpPondRipple {
+  0%, 100% {
+    transform: scale3d(0.96, 0.96, 1);
+    opacity: 0.35;
+  }
+  50% {
+    transform: scale3d(1.06, 1.06, 1);
+    opacity: 0.7;
+  }
+}
+
+/* Hand-Painted Butterfly Gliding Path & Wing Flap */
+@keyframes hpButterflyGlideA {
+  0%, 100% {
+    transform: translate3d(0px, 0px, 0) rotate(-6deg);
+  }
+  25% {
+    transform: translate3d(18px, -12px, 0) rotate(8deg);
+  }
+  50% {
+    transform: translate3d(32px, -4px, 0) rotate(14deg);
+  }
+  75% {
+    transform: translate3d(14px, 10px, 0) rotate(-10deg);
+  }
+}
+
+@keyframes hpButterflyGlideB {
+  0%, 100% {
+    transform: translate3d(0px, 0px, 0) rotate(8deg);
+  }
+  33% {
+    transform: translate3d(-22px, -14px, 0) rotate(-12deg);
+  }
+  66% {
+    transform: translate3d(-10px, 9px, 0) rotate(5deg);
+  }
+}
+
+@keyframes hpButterflyWingFlap {
+  0%, 100% {
+    transform: scale3d(1, 1, 1);
+  }
+  50% {
+    transform: scale3d(0.92, 0.52, 1);
+  }
+}
+
+/* Occasional Ambient Sunbeam Mote Drift */
+@keyframes hpSunMoteDrift {
+  0%, 100% {
+    transform: translate3d(0px, 0px, 0) scale3d(0.85, 0.85, 1);
+    opacity: 0.2;
+  }
+  50% {
+    transform: translate3d(8px, -14px, 0) scale3d(1.15, 1.15, 1);
+    opacity: 0.78;
+  }
+}
+
+/* Interactive Tree Selection, Watering Cascade & Growth Milestone Feedback */
+@keyframes hpTreeSelectBounce {
+  0% {
+    transform: scale3d(1, 1, 1);
+  }
+  35% {
+    transform: scale3d(1.09, 0.93, 1) translate3d(0, 2px, 0);
+  }
+  70% {
+    transform: scale3d(0.97, 1.05, 1) translate3d(0, -4px, 0);
+  }
+  100% {
+    transform: scale3d(1, 1, 1) translate3d(0, 0px, 0);
+  }
+}
+
+@keyframes hpWaterDropletFall {
+  0% {
+    transform: translate3d(0, -22px, 0) scale3d(0.7, 0.7, 1);
+    opacity: 0;
+  }
+  30% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate3d(0, 18px, 0) scale3d(1.05, 1.05, 1);
+    opacity: 0;
+  }
+}
+
+@keyframes hpGroundRingExpand {
+  0% {
+    transform: scale3d(0.55, 0.55, 1);
+    opacity: 0.95;
+  }
+  100% {
+    transform: scale3d(1.45, 1.45, 1);
+    opacity: 0;
+  }
+}
+
+@keyframes hpMilestoneSparkleRise {
+  0% {
+    transform: translate3d(0, 8px, 0) scale3d(0.6, 0.6, 1);
+    opacity: 0;
+  }
+  25% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate3d(0, -34px, 0) scale3d(1.15, 1.15, 1);
+    opacity: 0;
+  }
+}
+
+.animate-sway {
+  animation: sway 4.5s ease-in-out infinite;
+  transform-origin: bottom center;
+}
+
+.animate-float {
+  animation: float-gentle 3.8s ease-in-out infinite;
+}
+
+.animate-pulse-soft {
+  animation: pulse-soft 3.2s ease-in-out infinite;
+}
+
+.hp-avatar-walk-bob {
+  animation: hpAvatarWalkBob 0.62s linear infinite;
+}
+
+.hp-avatar-idle-bob {
+  animation: hpAvatarIdleBob 2.2s ease-in-out infinite;
+}
+
+.hp-leg-stride-left {
+  animation: hpLegStrideLeft 0.62s linear infinite;
+}
+
+.hp-leg-stride-right {
+  animation: hpLegStrideRight 0.62s linear infinite;
+}
+
+.hp-canopy-breeze {
+  animation: hpCanopyBreeze 5.6s ease-in-out infinite;
+  transform-origin: 0px 10px;
+}
+
+.hp-water-flow {
+  animation: hpWaterFlow 3.8s ease-in-out infinite;
+}
+
+.hp-streamlet-flow {
+  animation: hpStreamletFlow 3.2s ease-in-out infinite;
+}
+
+.hp-pond-ripple {
+  animation: hpPondRipple 4.4s ease-in-out infinite;
+  transform-origin: 2px 2px;
+}
+
+.hp-butterfly-glide-a {
+  animation: hpButterflyGlideA 9s ease-in-out infinite;
+  transform-origin: 0px 0px;
+  contain: layout style;
+}
+
+.hp-butterfly-glide-b {
+  animation: hpButterflyGlideB 11s ease-in-out infinite;
+  transform-origin: 0px 0px;
+  contain: layout style;
+}
+
+.hp-butterfly-wings {
+  animation: hpButterflyWingFlap 0.65s ease-in-out infinite;
+  transform-origin: 0px 0px;
+}
+
+.hp-sun-mote {
+  animation: hpSunMoteDrift 6.5s ease-in-out infinite;
+  contain: layout style;
+}
+
+.hp-tree-select-pop {
+  animation: hpTreeSelectBounce 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.hp-water-droplet {
+  animation: hpWaterDropletFall 1.1s ease-in infinite;
+}
+
+.hp-ground-ring {
+  animation: hpGroundRingExpand 1.5s ease-out infinite;
+  transform-origin: 0px 2px;
+}
+
+.hp-milestone-sparkle {
+  animation: hpMilestoneSparkleRise 1.6s ease-out infinite;
+}
+
+/* Respect user Reduced Motion accessibility preference */
+@media (prefers-reduced-motion: reduce) {
+  .animate-sway,
+  .animate-float,
+  .animate-pulse-soft,
+  .animate-bounce,
+  .animate-pulse,
+  .hp-avatar-walk-bob,
+  .hp-avatar-idle-bob,
+  .hp-leg-stride-left,
+  .hp-leg-stride-right,
+  .hp-canopy-breeze,
+  .hp-canopy-breeze-slow,
+  .hp-water-flow,
+  .hp-streamlet-flow,
+  .hp-pond-ripple,
+  .hp-butterfly-glide-a,
+  .hp-butterfly-glide-b,
+  .hp-butterfly-wings,
+  .hp-sun-mote,
+  .hp-tree-select-pop,
+  .hp-water-droplet,
+  .hp-ground-ring,
+  .hp-milestone-sparkle {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* Custom scrollbar for game UI */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(15, 36, 29, 0.45);
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(110, 231, 183, 0.45);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(251, 191, 36, 0.75);
+}

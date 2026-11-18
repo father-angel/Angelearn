@@ -1,0 +1,1069 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Pillar 1: Global Default-Deny Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Hardened Global Primitives
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerifiedUser() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isOwner(userId) {
+      return isVerifiedUser() && request.auth.uid == userId;
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // Pillar 2: Validation Blueprint for UserAccount (/users/{userId})
+    function isValidUserAccount(data) {
+      let requiredKeys = [
+        'uid',
+        'email',
+        'displayName',
+        'photoURL',
+        'gender',
+        'coins',
+        'streakDays',
+        'bio',
+        'skinTone',
+        'hairStyle',
+        'hairColor',
+        'faceExpression',
+        'outfit',
+        'pants',
+        'accessory',
+        'bgAura',
+        'createdAt',
+        'updatedAt'
+      ];
+      let allowedKeys = [
+        'uid',
+        'email',
+        'displayName',
+        'photoURL',
+        'gender',
+        'coins',
+        'streakDays',
+        'bio',
+        'skinTone',
+        'hairStyle',
+        'hairColor',
+        'faceExpression',
+        'outfit',
+        'pants',
+        'accessory',
+        'bgAura',
+        'groupId',
+        'groupName',
+        'createdAt',
+        'updatedAt'
+      ];
+      return data.keys().hasAll(requiredKeys) &&
+        data.keys().hasOnly(allowedKeys) &&
+        data.uid is string && data.uid.size() >= 1 && data.uid.size() <= 128 && data.uid.matches('^[a-zA-Z0-9_\\-]+$') &&
+        data.uid == request.auth.uid &&
+        data.email is string && data.email.size() >= 3 && data.email.size() <= 254 &&
+        data.displayName is string && data.displayName.size() >= 1 && data.displayName.size() <= 50 &&
+        data.photoURL is string && data.photoURL.size() >= 0 && data.photoURL.size() <= 500 &&
+        data.gender is string && (data.gender == 'boy' || data.gender == 'girl') &&
+        data.coins is int && data.coins >= 0 && data.coins <= 10000000 &&
+        data.streakDays is int && data.streakDays >= 0 && data.streakDays <= 100000 &&
+        data.bio is string && data.bio.size() >= 0 && data.bio.size() <= 140 &&
+        data.skinTone is string && data.skinTone.size() >= 1 && data.skinTone.size() <= 40 &&
+        data.hairStyle is string && data.hairStyle.size() >= 1 && data.hairStyle.size() <= 40 &&
+        data.hairColor is string && data.hairColor.size() >= 1 && data.hairColor.size() <= 40 &&
+        data.faceExpression is string && data.faceExpression.size() >= 1 && data.faceExpression.size() <= 40 &&
+        data.outfit is string && data.outfit.size() >= 1 && data.outfit.size() <= 40 &&
+        data.pants is string && data.pants.size() >= 1 && data.pants.size() <= 40 &&
+        data.accessory is string && data.accessory.size() >= 1 && data.accessory.size() <= 40 &&
+        data.bgAura is string && data.bgAura.size() >= 1 && data.bgAura.size() <= 40 &&
+        (!('groupId' in data) || (data.groupId is string && data.groupId.size() <= 128)) &&
+        (!('groupName' in data) || (data.groupName is string && data.groupName.size() <= 40)) &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    // Pillar 2: Validation Blueprint for PublicWorldGarden (/worldGardens/{userId}) - Zero PII
+    function isValidWorldGarden(data) {
+      let requiredKeys = [
+        'uid',
+        'isPublic',
+        'displayName',
+        'gender',
+        'bio',
+        'streakDays',
+        'unlockedTreeCount',
+        'worldX',
+        'worldY',
+        'skinTone',
+        'hairStyle',
+        'hairColor',
+        'faceExpression',
+        'outfit',
+        'pants',
+        'accessory',
+        'bgAura',
+        'createdAt',
+        'updatedAt'
+      ];
+      let allowedKeys = [
+        'uid',
+        'isPublic',
+        'displayName',
+        'gender',
+        'bio',
+        'streakDays',
+        'unlockedTreeCount',
+        'worldX',
+        'worldY',
+        'skinTone',
+        'hairStyle',
+        'hairColor',
+        'faceExpression',
+        'outfit',
+        'pants',
+        'accessory',
+        'bgAura',
+        'treesSnapshot',
+        'decorationsSnapshot',
+        'createdAt',
+        'updatedAt'
+      ];
+      return data.keys().hasAll(requiredKeys) &&
+        data.keys().hasOnly(allowedKeys) &&
+        data.uid is string && data.uid.size() >= 1 && data.uid.size() <= 128 && data.uid.matches('^[a-zA-Z0-9_\\-]+$') &&
+        data.uid == request.auth.uid &&
+        data.isPublic is bool && data.isPublic == true &&
+        data.displayName is string && data.displayName.size() >= 1 && data.displayName.size() <= 50 &&
+        data.gender is string && (data.gender == 'boy' || data.gender == 'girl') &&
+        data.bio is string && data.bio.size() >= 0 && data.bio.size() <= 140 &&
+        data.streakDays is int && data.streakDays >= 0 && data.streakDays <= 100000 &&
+        data.unlockedTreeCount is int && data.unlockedTreeCount >= 1 && data.unlockedTreeCount <= 36 &&
+        data.worldX is int && data.worldX >= 240 && data.worldX <= 2560 &&
+        data.worldY is int && data.worldY >= 200 && data.worldY <= 1650 &&
+        data.skinTone is string && data.skinTone.size() >= 1 && data.skinTone.size() <= 40 &&
+        data.hairStyle is string && data.hairStyle.size() >= 1 && data.hairStyle.size() <= 40 &&
+        data.hairColor is string && data.hairColor.size() >= 1 && data.hairColor.size() <= 40 &&
+        data.faceExpression is string && data.faceExpression.size() >= 1 && data.faceExpression.size() <= 40 &&
+        data.outfit is string && data.outfit.size() >= 1 && data.outfit.size() <= 40 &&
+        data.pants is string && data.pants.size() >= 1 && data.pants.size() <= 40 &&
+        data.accessory is string && data.accessory.size() >= 1 && data.accessory.size() <= 40 &&
+        data.bgAura is string && data.bgAura.size() >= 1 && data.bgAura.size() <= 40 &&
+        (!('treesSnapshot' in data) || (
+          data.treesSnapshot is list &&
+          data.treesSnapshot.size() <= 12 &&
+          (data.treesSnapshot.size() == 0 || (
+            data.treesSnapshot[0] is map &&
+            data.treesSnapshot[0].keys().hasAll(['id', 'unlocked', 'wateredDaysCount', 'x', 'y']) &&
+            data.treesSnapshot[0].keys().hasOnly(['id', 'unlocked', 'wateredDaysCount', 'x', 'y']) &&
+            data.treesSnapshot[0].id is string && data.treesSnapshot[0].id.size() >= 1 && data.treesSnapshot[0].id.size() <= 40 &&
+            data.treesSnapshot[0].unlocked is bool &&
+            data.treesSnapshot[0].wateredDaysCount is int && data.treesSnapshot[0].wateredDaysCount >= 0 && data.treesSnapshot[0].wateredDaysCount <= 100000 &&
+            data.treesSnapshot[0].x is int && data.treesSnapshot[0].x >= 0 && data.treesSnapshot[0].x <= 5 &&
+            data.treesSnapshot[0].y is int && data.treesSnapshot[0].y >= 0 && data.treesSnapshot[0].y <= 5
+          ))
+        )) &&
+        (!('decorationsSnapshot' in data) || (
+          data.decorationsSnapshot is list &&
+          data.decorationsSnapshot.size() <= 36 &&
+          (data.decorationsSnapshot.size() == 0 || (
+            data.decorationsSnapshot[0] is map &&
+            data.decorationsSnapshot[0].keys().hasAll(['type', 'name', 'icon', 'x', 'y']) &&
+            data.decorationsSnapshot[0].keys().hasOnly(['type', 'name', 'icon', 'x', 'y']) &&
+            data.decorationsSnapshot[0].type is string && data.decorationsSnapshot[0].type.size() >= 1 && data.decorationsSnapshot[0].type.size() <= 24 &&
+            data.decorationsSnapshot[0].name is string && data.decorationsSnapshot[0].name.size() >= 1 && data.decorationsSnapshot[0].name.size() <= 60 &&
+            data.decorationsSnapshot[0].icon is string && data.decorationsSnapshot[0].icon.size() >= 1 && data.decorationsSnapshot[0].icon.size() <= 16 &&
+            data.decorationsSnapshot[0].x is int && data.decorationsSnapshot[0].x >= 0 && data.decorationsSnapshot[0].x <= 5 &&
+            data.decorationsSnapshot[0].y is int && data.decorationsSnapshot[0].y >= 0 && data.decorationsSnapshot[0].y <= 5
+          ))
+        )) &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    // Collection: /users/{userId} (PII Isolated to Owner Only)
+    match /users/{userId} {
+      allow get: if isOwner(userId) && isValidId(userId);
+      allow list: if false;
+
+      allow create: if isOwner(userId) &&
+        isValidId(userId) &&
+        isValidUserAccount(incoming()) &&
+        incoming().uid == userId &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time;
+
+      allow update: if isOwner(userId) &&
+        isValidId(userId) &&
+        isValidUserAccount(incoming()) &&
+        incoming().uid == existing().uid &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time &&
+        incoming().diff(existing()).affectedKeys().hasOnly([
+          'email',
+          'displayName',
+          'photoURL',
+          'gender',
+          'coins',
+          'streakDays',
+          'bio',
+          'skinTone',
+          'hairStyle',
+          'hairColor',
+          'faceExpression',
+          'outfit',
+          'pants',
+          'accessory',
+          'bgAura',
+          'groupId',
+          'groupName',
+          'updatedAt'
+        ]);
+
+      allow delete: if isOwner(userId) && isValidId(userId);
+    }
+
+    // Collection: /worldGardens/{userId} (Public World Map Presence - Zero PII)
+    match /worldGardens/{userId} {
+      allow get: if isValidId(userId) && (isOwner(userId) || (resource != null && existing().isPublic == true));
+      allow list: if existing().isPublic == true;
+
+      allow create: if isOwner(userId) &&
+        isValidId(userId) &&
+        isValidWorldGarden(incoming()) &&
+        incoming().uid == userId &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time;
+
+      allow update: if isOwner(userId) &&
+        isValidId(userId) &&
+        isValidWorldGarden(incoming()) &&
+        incoming().uid == existing().uid &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time &&
+        incoming().diff(existing()).affectedKeys().hasOnly([
+          'isPublic',
+          'displayName',
+          'gender',
+          'bio',
+          'streakDays',
+          'unlockedTreeCount',
+          'worldX',
+          'worldY',
+          'skinTone',
+          'hairStyle',
+          'hairColor',
+          'faceExpression',
+          'outfit',
+          'pants',
+          'accessory',
+          'bgAura',
+          'treesSnapshot',
+          'decorationsSnapshot',
+          'updatedAt'
+        ]);
+
+      allow delete: if isOwner(userId) && isValidId(userId);
+    }
+
+    // Pillar 2: Validation Blueprint for WorldChatMessage (/worldChatMessages/{messageId})
+    function isValidWorldChatMessage(data) {
+      let allowedKeys = [
+        'isPublic',
+        'senderUid',
+        'senderName',
+        'senderGender',
+        'skinTone',
+        'hairStyle',
+        'hairColor',
+        'faceExpression',
+        'outfit',
+        'pants',
+        'accessory',
+        'bgAura',
+        'text',
+        'createdAt'
+      ];
+      return data.keys().hasAll(allowedKeys) &&
+        data.keys().hasOnly(allowedKeys) &&
+        data.isPublic is bool && data.isPublic == true &&
+        isValidId(data.senderUid) &&
+        data.senderUid == request.auth.uid &&
+        data.senderName is string && data.senderName.size() >= 1 && data.senderName.size() <= 50 &&
+        data.senderGender is string && (data.senderGender == 'boy' || data.senderGender == 'girl') &&
+        data.skinTone is string && data.skinTone.size() >= 1 && data.skinTone.size() <= 40 &&
+        data.hairStyle is string && data.hairStyle.size() >= 1 && data.hairStyle.size() <= 40 &&
+        data.hairColor is string && data.hairColor.size() >= 1 && data.hairColor.size() <= 40 &&
+        data.faceExpression is string && data.faceExpression.size() >= 1 && data.faceExpression.size() <= 40 &&
+        data.outfit is string && data.outfit.size() >= 1 && data.outfit.size() <= 40 &&
+        data.pants is string && data.pants.size() >= 1 && data.pants.size() <= 40 &&
+        data.accessory is string && data.accessory.size() >= 1 && data.accessory.size() <= 40 &&
+        data.bgAura is string && data.bgAura.size() >= 1 && data.bgAura.size() <= 40 &&
+        data.text is string && data.text.size() >= 1 && data.text.size() <= 500 &&
+        data.createdAt is timestamp;
+    }
+
+    function isValidParticipantsPair(parts) {
+      return parts is list &&
+        parts.size() == 2 &&
+        isValidId(parts[0]) &&
+        isValidId(parts[1]) &&
+        parts[0] != parts[1] &&
+        parts[0] < parts[1];
+    }
+
+    // Pillar 2: Validation Blueprint for DmThread (/dmThreads/{threadId})
+    function isValidDmThread(data) {
+      let allowedKeys = [
+        'id',
+        'participants',
+        'lastMessageText',
+        'lastMessageSenderUid',
+        'lastMessageAt',
+        'createdAt',
+        'updatedAt'
+      ];
+      return data.keys().hasAll(allowedKeys) &&
+        data.keys().hasOnly(allowedKeys) &&
+        isValidId(data.id) &&
+        isValidParticipantsPair(data.participants) &&
+        data.lastMessageText is string && data.lastMessageText.size() >= 1 && data.lastMessageText.size() <= 500 &&
+        isValidId(data.lastMessageSenderUid) &&
+        data.lastMessageAt is timestamp &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    // Pillar 2: Validation Blueprint for DmMessage (/dmThreads/{threadId}/messages/{messageId})
+    function isValidDmMessage(data) {
+      let allowedKeys = [
+        'threadId',
+        'participants',
+        'senderUid',
+        'senderName',
+        'text',
+        'createdAt'
+      ];
+      return data.keys().hasAll(allowedKeys) &&
+        data.keys().hasOnly(allowedKeys) &&
+        isValidId(data.threadId) &&
+        isValidParticipantsPair(data.participants) &&
+        isValidId(data.senderUid) &&
+        data.senderUid == request.auth.uid &&
+        data.senderName is string && data.senderName.size() >= 1 && data.senderName.size() <= 50 &&
+        data.text is string && data.text.size() >= 1 && data.text.size() <= 500 &&
+        data.createdAt is timestamp;
+    }
+
+    function isDmThreadParticipant(threadId) {
+      return isVerifiedUser() &&
+        request.auth.uid in get(/databases/$(database)/documents/dmThreads/$(threadId)).data.participants;
+    }
+
+    // Collection: /worldChatMessages/{messageId} (Public World Chat - Zero PII)
+    match /worldChatMessages/{messageId} {
+      allow get: if isValidId(messageId) && resource != null && existing().isPublic == true;
+      allow list: if existing().isPublic == true;
+
+      allow create: if isVerifiedUser() &&
+        isValidId(messageId) &&
+        isValidWorldChatMessage(incoming()) &&
+        incoming().senderUid == request.auth.uid &&
+        incoming().createdAt == request.time;
+
+      allow update: if false;
+      allow delete: if isValidId(messageId) && isVerifiedUser() && existing().senderUid == request.auth.uid;
+    }
+
+    // Collection: /dmThreads/{threadId} (1-on-1 Direct Message Threads - Strictly Participant-Isolated)
+    match /dmThreads/{threadId} {
+      allow get: if isVerifiedUser() &&
+        isValidId(threadId) &&
+        (resource == null || request.auth.uid in existing().participants);
+
+      allow list: if isVerifiedUser() &&
+        (request.auth.uid in existing().participants);
+
+      allow create: if isVerifiedUser() &&
+        isValidId(threadId) &&
+        isValidDmThread(incoming()) &&
+        incoming().id == threadId &&
+        threadId == (incoming().participants[0] + '__' + incoming().participants[1]) &&
+        (request.auth.uid in incoming().participants) &&
+        incoming().lastMessageSenderUid == request.auth.uid &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time &&
+        incoming().lastMessageAt == request.time;
+
+      allow update: if isVerifiedUser() &&
+        isValidId(threadId) &&
+        isValidDmThread(incoming()) &&
+        (request.auth.uid in existing().participants) &&
+        incoming().id == existing().id &&
+        incoming().participants == existing().participants &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().lastMessageSenderUid == request.auth.uid &&
+        incoming().updatedAt == request.time &&
+        incoming().lastMessageAt == request.time &&
+        incoming().diff(existing()).affectedKeys().hasOnly([
+          'lastMessageText',
+          'lastMessageSenderUid',
+          'lastMessageAt',
+          'updatedAt'
+        ]);
+
+      allow delete: if false;
+
+      // Subcollection: /dmThreads/{threadId}/messages/{messageId} (Master Gate)
+      match /messages/{messageId} {
+        allow get: if isValidId(threadId) &&
+          isValidId(messageId) &&
+          isDmThreadParticipant(threadId) &&
+          (request.auth.uid in existing().participants);
+
+        // Zero get()/exists() in allow list (Pillar 8 Cost-Optimization Clause)
+        allow list: if isVerifiedUser() &&
+          (request.auth.uid in existing().participants);
+
+        allow create: if isValidId(threadId) &&
+          isValidId(messageId) &&
+          isDmThreadParticipant(threadId) &&
+          isValidDmMessage(incoming()) &&
+          incoming().threadId == threadId &&
+          incoming().participants == get(/databases/$(database)/documents/dmThreads/$(threadId)).data.participants &&
+          incoming().senderUid == request.auth.uid &&
+          incoming().createdAt == request.time;
+
+        allow update: if false;
+        allow delete: if isValidId(threadId) &&
+          isValidId(messageId) &&
+          isVerifiedUser() &&
+          existing().senderUid == request.auth.uid;
+      }
+    }
+
+    // =========================================================================
+    // WORLD GROUPS, COLLABORATIVE BUILDINGS, REQUESTS, INVITES & GROUP CHAT
+    // =========================================================================
+
+    function isGroupLeader(groupId) {
+      return isVerifiedUser() &&
+        get(/databases/$(database)/documents/groups/$(groupId)).data.leaderUid == request.auth.uid;
+    }
+
+    function isGroupMember(groupId) {
+      return isVerifiedUser() &&
+        exists(/databases/$(database)/documents/groups/$(groupId)/members/$(request.auth.uid));
+    }
+
+    function hasPendingGroupInvite(groupId, uid) {
+      return exists(/databases/$(database)/documents/groupInvites/$(groupId + '__' + uid)) &&
+        get(/databases/$(database)/documents/groupInvites/$(groupId + '__' + uid)).data.status == 'pending';
+    }
+
+    function isValidWorldGroup(data) {
+      let allowedKeys = [
+        'id',
+        'name',
+        'motto',
+        'leaderUid',
+        'leaderName',
+        'isPublic',
+        'buildingLevel',
+        'treasuryCoins',
+        'totalContributedCoins',
+        'memberCount',
+        'worldX',
+        'worldY',
+        'createdAt',
+        'updatedAt'
+      ];
+      return data.keys().hasAll(allowedKeys) &&
+        data.keys().hasOnly(allowedKeys) &&
+        isValidId(data.id) &&
+        data.name is string && data.name.size() >= 2 && data.name.size() <= 40 &&
+        data.motto is string && data.motto.size() >= 0 && data.motto.size() <= 120 &&
+        isValidId(data.leaderUid) &&
+        data.leaderName is string && data.leaderName.size() >= 1 && data.leaderName.size() <= 50 &&
+        data.isPublic is bool && data.isPublic == true &&
+        data.buildingLevel is int && data.buildingLevel >= 1 && data.buildingLevel <= 5 &&
+        data.treasuryCoins is int && data.treasuryCoins >= 0 && data.treasuryCoins <= 100000 &&
+        data.totalContributedCoins is int && data.totalContributedCoins >= 0 && data.totalContributedCoins <= 1000000 &&
+        data.memberCount is int && data.memberCount >= 1 && data.memberCount <= 30 &&
+        data.worldX is int && data.worldX >= 240 && data.worldX <= 2560 &&
+        data.worldY is int && data.worldY >= 200 && data.worldY <= 1650 &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidGroupMember(data) {
+      let allowedKeys = [
+        'uid',
+        'groupId',
+        'displayName',
+        'gender',
+        'skinTone',
+        'hairStyle',
+        'hairColor',
+        'faceExpression',
+        'outfit',
+        'pants',
+        'accessory',
+        'bgAura',
+        'role',
+        'contributedCoins',
+        'joinedAt',
+        'updatedAt'
+      ];
+      return data.keys().hasAll(allowedKeys) &&
+        data.keys().hasOnly(allowedKeys) &&
+        isValidId(data.uid) &&
+        isValidId(data.groupId) &&
+        data.displayName is string && data.displayName.size() >= 1 && data.displayName.size() <= 50 &&
+        data.gender is string && (data.gender == 'boy' || data.gender == 'girl') &&
+        data.skinTone is string && data.skinTone.size() >= 1 && data.skinTone.size() <= 40 &&
+        data.hairStyle is string && data.hairStyle.size() >= 1 && data.hairStyle.size() <= 40 &&
+        data.hairColor is string && data.hairColor.size() >= 1 && data.hairColor.size() <= 40 &&
+        data.faceExpression is string && data.faceExpression.size() >= 1 && data.faceExpression.size() <= 40 &&
+        data.outfit is string && data.outfit.size() >= 1 && data.outfit.size() <= 40 &&
+        data.pants is string && data.pants.size() >= 1 && data.pants.size() <= 40 &&
+        data.accessory is string && data.accessory.size() >= 1 && data.accessory.size() <= 40 &&
+        data.bgAura is string && data.bgAura.size() >= 1 && data.bgAura.size() <= 40 &&
+        data.role is string && (data.role == 'leader' || data.role == 'member') &&
+        data.contributedCoins is int && data.contributedCoins >= 0 && data.contributedCoins <= 1000000 &&
+        data.joinedAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidGroupJoinRequest(data) {
+      let allowedKeys = [
+        'groupId',
+        'leaderUid',
+        'applicantUid',
+        'applicantName',
+        'applicantGender',
+        'skinTone',
+        'hairStyle',
+        'hairColor',
+        'faceExpression',
+        'outfit',
+        'pants',
+        'accessory',
+        'bgAura',
+        'note',
+        'status',
+        'createdAt'
+      ];
+      return data.keys().hasAll(allowedKeys) &&
+        data.keys().hasOnly(allowedKeys) &&
+        isValidId(data.groupId) &&
+        isValidId(data.leaderUid) &&
+        isValidId(data.applicantUid) &&
+        data.applicantUid == request.auth.uid &&
+        data.applicantName is string && data.applicantName.size() >= 1 && data.applicantName.size() <= 50 &&
+        data.applicantGender is string && (data.applicantGender == 'boy' || data.applicantGender == 'girl') &&
+        data.skinTone is string && data.skinTone.size() >= 1 && data.skinTone.size() <= 40 &&
+        data.hairStyle is string && data.hairStyle.size() >= 1 && data.hairStyle.size() <= 40 &&
+        data.hairColor is string && data.hairColor.size() >= 1 && data.hairColor.size() <= 40 &&
+        data.faceExpression is string && data.faceExpression.size() >= 1 && data.faceExpression.size() <= 40 &&
+        data.outfit is string && data.outfit.size() >= 1 && data.outfit.size() <= 40 &&
+        data.pants is string && data.pants.size() >= 1 && data.pants.size() <= 40 &&
+        data.accessory is string && data.accessory.size() >= 1 && data.accessory.size() <= 40 &&
+        data.bgAura is string && data.bgAura.size() >= 1 && data.bgAura.size() <= 40 &&
+        data.note is string && data.note.size() >= 0 && data.note.size() <= 120 &&
+        data.status is string && data.status == 'pending' &&
+        data.createdAt is timestamp;
+    }
+
+    function isValidGroupInvite(data) {
+      let allowedKeys = [
+        'id',
+        'groupId',
+        'groupName',
+        'inviterUid',
+        'inviterName',
+        'targetUid',
+        'targetName',
+        'status',
+        'createdAt',
+        'updatedAt'
+      ];
+      return data.keys().hasAll(allowedKeys) &&
+        data.keys().hasOnly(allowedKeys) &&
+        isValidId(data.id) &&
+        isValidId(data.groupId) &&
+        data.groupName is string && data.groupName.size() >= 2 && data.groupName.size() <= 40 &&
+        isValidId(data.inviterUid) &&
+        data.inviterName is string && data.inviterName.size() >= 1 && data.inviterName.size() <= 50 &&
+        isValidId(data.targetUid) &&
+        data.targetName is string && data.targetName.size() >= 1 && data.targetName.size() <= 50 &&
+        data.status is string && (data.status == 'pending' || data.status == 'accepted' || data.status == 'declined') &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidGroupChatMessage(data) {
+      let allowedKeys = [
+        'groupId',
+        'senderUid',
+        'senderName',
+        'senderGender',
+        'skinTone',
+        'hairStyle',
+        'hairColor',
+        'faceExpression',
+        'outfit',
+        'pants',
+        'accessory',
+        'bgAura',
+        'text',
+        'createdAt'
+      ];
+      return data.keys().hasAll(allowedKeys) &&
+        data.keys().hasOnly(allowedKeys) &&
+        isValidId(data.groupId) &&
+        isValidId(data.senderUid) &&
+        data.senderUid == request.auth.uid &&
+        data.senderName is string && data.senderName.size() >= 1 && data.senderName.size() <= 50 &&
+        data.senderGender is string && (data.senderGender == 'boy' || data.senderGender == 'girl') &&
+        data.skinTone is string && data.skinTone.size() >= 1 && data.skinTone.size() <= 40 &&
+        data.hairStyle is string && data.hairStyle.size() >= 1 && data.hairStyle.size() <= 40 &&
+        data.hairColor is string && data.hairColor.size() >= 1 && data.hairColor.size() <= 40 &&
+        data.faceExpression is string && data.faceExpression.size() >= 1 && data.faceExpression.size() <= 40 &&
+        data.outfit is string && data.outfit.size() >= 1 && data.outfit.size() <= 40 &&
+        data.pants is string && data.pants.size() >= 1 && data.pants.size() <= 40 &&
+        data.accessory is string && data.accessory.size() >= 1 && data.accessory.size() <= 40 &&
+        data.bgAura is string && data.bgAura.size() >= 1 && data.bgAura.size() <= 40 &&
+        data.text is string && data.text.size() >= 1 && data.text.size() <= 500 &&
+        data.createdAt is timestamp;
+    }
+
+    function isValidGroupChallenge(data) {
+      let allowedKeys = [
+        'id',
+        'groupId',
+        'gameId',
+        'title',
+        'creatorUid',
+        'creatorName',
+        'creatorGender',
+        'skinTone',
+        'hairStyle',
+        'hairColor',
+        'faceExpression',
+        'outfit',
+        'pants',
+        'accessory',
+        'bgAura',
+        'createdAt'
+      ];
+      return data.keys().hasAll(allowedKeys) &&
+        data.keys().hasOnly(allowedKeys) &&
+        isValidId(data.id) &&
+        isValidId(data.groupId) &&
+        data.gameId is string && (data.gameId == 'brain_math' || data.gameId == 'bina_balls' || data.gameId == 'memory_cards' || data.gameId == 'color_trap' || data.gameId == 'logic_mind' || data.gameId == 'spatial_memory' || data.gameId == 'coordination_duel') &&
+        data.title is string && data.title.size() >= 2 && data.title.size() <= 60 &&
+        isValidId(data.creatorUid) &&
+        data.creatorUid == request.auth.uid &&
+        data.creatorName is string && data.creatorName.size() >= 1 && data.creatorName.size() <= 50 &&
+        data.creatorGender is string && (data.creatorGender == 'boy' || data.creatorGender == 'girl') &&
+        data.skinTone is string && data.skinTone.size() >= 1 && data.skinTone.size() <= 40 &&
+        data.hairStyle is string && data.hairStyle.size() >= 1 && data.hairStyle.size() <= 40 &&
+        data.hairColor is string && data.hairColor.size() >= 1 && data.hairColor.size() <= 40 &&
+        data.faceExpression is string && data.faceExpression.size() >= 1 && data.faceExpression.size() <= 40 &&
+        data.outfit is string && data.outfit.size() >= 1 && data.outfit.size() <= 40 &&
+        data.pants is string && data.pants.size() >= 1 && data.pants.size() <= 40 &&
+        data.accessory is string && data.accessory.size() >= 1 && data.accessory.size() <= 40 &&
+        data.bgAura is string && data.bgAura.size() >= 1 && data.bgAura.size() <= 40 &&
+        data.createdAt is timestamp;
+    }
+
+    function isValidGroupChallengeScore(data) {
+      let allowedKeys = [
+        'challengeId',
+        'groupId',
+        'playerUid',
+        'playerName',
+        'playerGender',
+        'skinTone',
+        'hairStyle',
+        'hairColor',
+        'faceExpression',
+        'outfit',
+        'pants',
+        'accessory',
+        'bgAura',
+        'bestScore',
+        'bestDetail',
+        'attemptsCount',
+        'createdAt',
+        'updatedAt'
+      ];
+      return data.keys().hasAll(allowedKeys) &&
+        data.keys().hasOnly(allowedKeys) &&
+        isValidId(data.challengeId) &&
+        isValidId(data.groupId) &&
+        isValidId(data.playerUid) &&
+        data.playerUid == request.auth.uid &&
+        data.playerName is string && data.playerName.size() >= 1 && data.playerName.size() <= 50 &&
+        data.playerGender is string && (data.playerGender == 'boy' || data.playerGender == 'girl') &&
+        data.skinTone is string && data.skinTone.size() >= 1 && data.skinTone.size() <= 40 &&
+        data.hairStyle is string && data.hairStyle.size() >= 1 && data.hairStyle.size() <= 40 &&
+        data.hairColor is string && data.hairColor.size() >= 1 && data.hairColor.size() <= 40 &&
+        data.faceExpression is string && data.faceExpression.size() >= 1 && data.faceExpression.size() <= 40 &&
+        data.outfit is string && data.outfit.size() >= 1 && data.outfit.size() <= 40 &&
+        data.pants is string && data.pants.size() >= 1 && data.pants.size() <= 40 &&
+        data.accessory is string && data.accessory.size() >= 1 && data.accessory.size() <= 40 &&
+        data.bgAura is string && data.bgAura.size() >= 1 && data.bgAura.size() <= 40 &&
+        data.bestScore is int && data.bestScore >= 0 && data.bestScore <= 1000000 &&
+        data.bestDetail is string && data.bestDetail.size() >= 1 && data.bestDetail.size() <= 80 &&
+        data.attemptsCount is int && data.attemptsCount >= 1 && data.attemptsCount <= 100000 &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    // Collection: /groups/{groupId}
+    match /groups/{groupId} {
+      allow get: if isValidId(groupId) && (resource == null || existing().isPublic == true);
+      allow list: if existing().isPublic == true;
+
+      allow create: if isVerifiedUser() &&
+        isValidId(groupId) &&
+        isValidWorldGroup(incoming()) &&
+        incoming().id == groupId &&
+        incoming().leaderUid == request.auth.uid &&
+        incoming().buildingLevel == 1 &&
+        incoming().memberCount == 1 &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time;
+
+      allow update: if isVerifiedUser() &&
+        isValidId(groupId) &&
+        isValidWorldGroup(incoming()) &&
+        incoming().id == existing().id &&
+        incoming().leaderUid == existing().leaderUid &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time &&
+        (
+          // Action 1: Verified group member donates coins & upgrades group building
+          (
+            isGroupMember(groupId) &&
+            incoming().diff(existing()).affectedKeys().hasOnly([
+              'buildingLevel',
+              'treasuryCoins',
+              'totalContributedCoins',
+              'updatedAt'
+            ]) &&
+            incoming().buildingLevel >= existing().buildingLevel &&
+            incoming().buildingLevel <= 5 &&
+            incoming().totalContributedCoins > existing().totalContributedCoins
+          ) ||
+          // Action 2: Group leader edits group details, relocates group tent on World Map, or adjusts member count
+          (
+            existing().leaderUid == request.auth.uid &&
+            incoming().diff(existing()).affectedKeys().hasOnly([
+              'name',
+              'motto',
+              'memberCount',
+              'worldX',
+              'worldY',
+              'updatedAt'
+            ]) &&
+            incoming().memberCount >= 1 &&
+            incoming().memberCount <= 30
+          ) ||
+          // Action 3: Invited member joins (+1) or existing member leaves (-1)
+          (
+            incoming().diff(existing()).affectedKeys().hasOnly([
+              'memberCount',
+              'updatedAt'
+            ]) &&
+            (
+              (
+                incoming().memberCount == existing().memberCount + 1 &&
+                (hasPendingGroupInvite(groupId, request.auth.uid) || isGroupMember(groupId))
+              ) ||
+              (
+                incoming().memberCount == existing().memberCount - 1 &&
+                incoming().memberCount >= 1 &&
+                isGroupMember(groupId)
+              )
+            )
+          )
+        );
+
+      allow delete: if isVerifiedUser() &&
+        isValidId(groupId) &&
+        existing().leaderUid == request.auth.uid &&
+        existing().memberCount <= 1;
+
+      // Subcollection: /groups/{groupId}/members/{memberUid}
+      match /members/{memberUid} {
+        allow get: if isVerifiedUser() && isValidId(groupId) && isValidId(memberUid);
+        allow list: if isVerifiedUser() && existing().groupId == groupId;
+
+        allow create: if isVerifiedUser() &&
+          isValidId(groupId) &&
+          isValidId(memberUid) &&
+          isValidGroupMember(incoming()) &&
+          incoming().uid == memberUid &&
+          incoming().groupId == groupId &&
+          incoming().joinedAt == request.time &&
+          incoming().updatedAt == request.time &&
+          (
+            (memberUid == request.auth.uid && incoming().role == 'leader' && isGroupLeader(groupId)) ||
+            (isGroupLeader(groupId) && incoming().role == 'member' && exists(/databases/$(database)/documents/groups/$(groupId)/joinRequests/$(memberUid))) ||
+            (memberUid == request.auth.uid && incoming().role == 'member' && hasPendingGroupInvite(groupId, memberUid))
+          );
+
+        allow update: if isVerifiedUser() &&
+          isValidId(groupId) &&
+          isValidId(memberUid) &&
+          request.auth.uid == memberUid &&
+          isValidGroupMember(incoming()) &&
+          incoming().uid == existing().uid &&
+          incoming().groupId == existing().groupId &&
+          incoming().role == existing().role &&
+          incoming().joinedAt == existing().joinedAt &&
+          incoming().updatedAt == request.time &&
+          incoming().contributedCoins >= existing().contributedCoins &&
+          incoming().diff(existing()).affectedKeys().hasOnly([
+            'displayName',
+            'skinTone',
+            'hairStyle',
+            'hairColor',
+            'faceExpression',
+            'outfit',
+            'pants',
+            'accessory',
+            'bgAura',
+            'contributedCoins',
+            'updatedAt'
+          ]);
+
+        allow delete: if isVerifiedUser() &&
+          isValidId(groupId) &&
+          isValidId(memberUid) &&
+          (request.auth.uid == memberUid || isGroupLeader(groupId));
+      }
+
+      // Subcollection: /groups/{groupId}/joinRequests/{applicantUid}
+      match /joinRequests/{applicantUid} {
+        allow get: if isVerifiedUser() &&
+          isValidId(groupId) &&
+          isValidId(applicantUid) &&
+          (resource == null || request.auth.uid == applicantUid || isGroupLeader(groupId));
+
+        // Zero get()/exists() in allow list (Pillar 8 Cost-Optimization Clause)
+        allow list: if isVerifiedUser() &&
+          (request.auth.uid == existing().applicantUid || request.auth.uid == existing().leaderUid);
+
+        allow create: if isVerifiedUser() &&
+          isValidId(groupId) &&
+          isValidId(applicantUid) &&
+          request.auth.uid == applicantUid &&
+          isValidGroupJoinRequest(incoming()) &&
+          incoming().groupId == groupId &&
+          incoming().applicantUid == applicantUid &&
+          incoming().leaderUid == get(/databases/$(database)/documents/groups/$(groupId)).data.leaderUid &&
+          incoming().status == 'pending' &&
+          incoming().createdAt == request.time;
+
+        allow update: if false;
+
+        allow delete: if isVerifiedUser() &&
+          isValidId(groupId) &&
+          isValidId(applicantUid) &&
+          (request.auth.uid == applicantUid || isGroupLeader(groupId));
+      }
+
+      // Subcollection: /groups/{groupId}/messages/{messageId} (Member-Only Group Chat)
+      match /messages/{messageId} {
+        allow get: if isVerifiedUser() &&
+          isValidId(groupId) &&
+          isValidId(messageId) &&
+          isGroupMember(groupId);
+
+        allow list: if isVerifiedUser() &&
+          existing().groupId == groupId &&
+          isGroupMember(groupId);
+
+        allow create: if isVerifiedUser() &&
+          isValidId(groupId) &&
+          isValidId(messageId) &&
+          isGroupMember(groupId) &&
+          isValidGroupChatMessage(incoming()) &&
+          incoming().groupId == groupId &&
+          incoming().senderUid == request.auth.uid &&
+          incoming().createdAt == request.time;
+
+        allow update: if false;
+
+        allow delete: if isVerifiedUser() &&
+          isValidId(groupId) &&
+          isValidId(messageId) &&
+          existing().senderUid == request.auth.uid;
+      }
+
+      // Subcollection: /groups/{groupId}/challenges/{challengeId} (Group Tree-Game Competitions)
+      match /challenges/{challengeId} {
+        allow get: if isVerifiedUser() &&
+          isValidId(groupId) &&
+          isValidId(challengeId) &&
+          isGroupMember(groupId);
+
+        allow list: if isVerifiedUser() &&
+          existing().groupId == groupId &&
+          isGroupMember(groupId);
+
+        allow create: if isVerifiedUser() &&
+          isValidId(groupId) &&
+          isValidId(challengeId) &&
+          isGroupMember(groupId) &&
+          isValidGroupChallenge(incoming()) &&
+          incoming().id == challengeId &&
+          incoming().groupId == groupId &&
+          incoming().creatorUid == request.auth.uid &&
+          incoming().createdAt == request.time;
+
+        allow update: if false;
+
+        allow delete: if isVerifiedUser() &&
+          isValidId(groupId) &&
+          isValidId(challengeId) &&
+          (existing().creatorUid == request.auth.uid || isGroupLeader(groupId));
+
+        // Subcollection: /groups/{groupId}/challenges/{challengeId}/scores/{playerUid}
+        // Enforces 1 document per player per challenge & strict high-score preservation on updates.
+        match /scores/{playerUid} {
+          allow get: if isVerifiedUser() &&
+            isValidId(groupId) &&
+            isValidId(challengeId) &&
+            isValidId(playerUid) &&
+            isGroupMember(groupId);
+
+          allow list: if isVerifiedUser() &&
+            existing().groupId == groupId &&
+            existing().challengeId == challengeId &&
+            isGroupMember(groupId);
+
+          allow create: if isVerifiedUser() &&
+            isValidId(groupId) &&
+            isValidId(challengeId) &&
+            isValidId(playerUid) &&
+            request.auth.uid == playerUid &&
+            isGroupMember(groupId) &&
+            isValidGroupChallengeScore(incoming()) &&
+            incoming().groupId == groupId &&
+            incoming().challengeId == challengeId &&
+            incoming().playerUid == playerUid &&
+            incoming().attemptsCount == 1 &&
+            incoming().createdAt == request.time &&
+            incoming().updatedAt == request.time;
+
+          allow update: if isVerifiedUser() &&
+            isValidId(groupId) &&
+            isValidId(challengeId) &&
+            isValidId(playerUid) &&
+            request.auth.uid == playerUid &&
+            isGroupMember(groupId) &&
+            isValidGroupChallengeScore(incoming()) &&
+            incoming().groupId == existing().groupId &&
+            incoming().challengeId == existing().challengeId &&
+            incoming().playerUid == existing().playerUid &&
+            incoming().createdAt == existing().createdAt &&
+            incoming().updatedAt == request.time &&
+            incoming().bestScore > existing().bestScore &&
+            incoming().attemptsCount >= existing().attemptsCount &&
+            incoming().diff(existing()).affectedKeys().hasOnly([
+              'playerName',
+              'playerGender',
+              'skinTone',
+              'hairStyle',
+              'hairColor',
+              'faceExpression',
+              'outfit',
+              'pants',
+              'accessory',
+              'bgAura',
+              'bestScore',
+              'bestDetail',
+              'attemptsCount',
+              'updatedAt'
+            ]);
+
+          allow delete: if isVerifiedUser() &&
+            isValidId(groupId) &&
+            isValidId(challengeId) &&
+            isValidId(playerUid) &&
+            (request.auth.uid == playerUid || isGroupLeader(groupId));
+        }
+      }
+    }
+
+    // Collection: /groupInvites/{inviteId} (Deterministic ID: groupId__targetUid)
+    match /groupInvites/{inviteId} {
+      allow get: if isVerifiedUser() &&
+        isValidId(inviteId) &&
+        (resource == null || request.auth.uid == existing().targetUid || request.auth.uid == existing().inviterUid);
+
+      // Zero get()/exists() in allow list (Pillar 8 Cost-Optimization Clause)
+      allow list: if isVerifiedUser() &&
+        (request.auth.uid == existing().targetUid || request.auth.uid == existing().inviterUid);
+
+      allow create: if isVerifiedUser() &&
+        isValidId(inviteId) &&
+        isValidGroupInvite(incoming()) &&
+        incoming().id == inviteId &&
+        inviteId == (incoming().groupId + '__' + incoming().targetUid) &&
+        incoming().inviterUid == request.auth.uid &&
+        incoming().targetUid != request.auth.uid &&
+        isGroupLeader(incoming().groupId) &&
+        incoming().status == 'pending' &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time;
+
+      allow update: if isVerifiedUser() &&
+        isValidId(inviteId) &&
+        isValidGroupInvite(incoming()) &&
+        request.auth.uid == existing().targetUid &&
+        existing().status == 'pending' &&
+        (incoming().status == 'accepted' || incoming().status == 'declined') &&
+        incoming().id == existing().id &&
+        incoming().groupId == existing().groupId &&
+        incoming().groupName == existing().groupName &&
+        incoming().inviterUid == existing().inviterUid &&
+        incoming().inviterName == existing().inviterName &&
+        incoming().targetUid == existing().targetUid &&
+        incoming().targetName == existing().targetName &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time &&
+        incoming().diff(existing()).affectedKeys().hasOnly([
+          'status',
+          'updatedAt'
+        ]);
+
+      allow delete: if isVerifiedUser() &&
+        isValidId(inviteId) &&
+        (request.auth.uid == existing().inviterUid || request.auth.uid == existing().targetUid);
+    }
+  }
+}
